@@ -1,0 +1,310 @@
+basePath: /
+definitions:
+  api.DebugInfo:
+    properties:
+      lastProcessedMessage:
+        example: 6
+        type: integer
+      pendingMessageCount:
+        example: 2
+        type: integer
+      pendingMessageNumbers:
+        example:
+        - 1
+        - 2
+        - 3
+        items:
+          type: integer
+        type: array
+      processedMessageCount:
+        example: 5
+        type: integer
+      rocketId:
+        example: 193270a9-c9cf-404a-8f83-838e71d9ae67
+        type: string
+    type: object
+  api.MessageResponse:
+    properties:
+      message:
+        example: Message processed successfully
+        type: string
+      messageNumber:
+        example: 1
+        type: integer
+      rocketId:
+        example: 193270a9-c9cf-404a-8f83-838e71d9ae67
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  errors.BadRequestError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      details:
+        example: Rocket ID must be a valid UUID
+        type: string
+      message:
+        example: Invalid rocket ID format
+        type: string
+    type: object
+  errors.MessageProcessingError:
+    properties:
+      messageNumber:
+        example: 3
+        type: integer
+      messageType:
+        example: RocketSpeedIncreased
+        type: string
+      reason:
+        example: Message processing failed - may be duplicate, out-of-order, or invalid
+          state transition
+        type: string
+      rocketId:
+        example: 193270a9-c9cf-404a-8f83-838e71d9ae67
+        type: string
+    type: object
+  errors.NotFoundError:
+    properties:
+      code:
+        example: 404
+        type: integer
+      details:
+        example: 'No rocket found with ID: 193270a9-c9cf-404a-8f83-838e71d9ae67'
+        type: string
+      message:
+        example: Rocket not found
+        type: string
+    type: object
+  models.MessageContent:
+    description: The content of a rocket message, with fields varying based on message
+      type
+    properties:
+      by:
+        description: RocketSpeedIncreased/Decreased fields
+        example: 3000
+        type: integer
+      launchSpeed:
+        example: 500
+        type: integer
+      mission:
+        example: ARTEMIS
+        type: string
+      newMission:
+        description: RocketMissionChanged fields
+        example: SHUTTLE_MIR
+        type: string
+      reason:
+        description: RocketExploded fields
+        example: PRESSURE_VESSEL_FAILURE
+        type: string
+      type:
+        description: RocketLaunched fields
+        example: Falcon-9
+        type: string
+    type: object
+  models.RocketMessage:
+    description: A message containing information about a rocket's state change
+    properties:
+      message:
+        allOf:
+        - $ref: '#/definitions/models.MessageContent'
+        description: Message content with all possible fields
+      metadata:
+        properties:
+          channel:
+            example: 193270a9-c9cf-404a-8f83-838e71d9ae67
+            type: string
+          messageNumber:
+            example: 1
+            type: integer
+          messageTime:
+            example: "2024-03-14T19:39:05.86337+01:00"
+            type: string
+          messageType:
+            example: RocketLaunched
+            type: string
+        type: object
+    type: object
+  models.RocketState:
+    description: Full rocket state information
+    properties:
+      createdAt:
+        description: Time of first launch
+        example: "2024-03-14T19:39:05.86337+01:00"
+        type: string
+      exploded:
+        description: 'Status: "exploded"'
+        example: false
+        type: boolean
+      id:
+        description: Rocket channel ID (unique identifier)
+        example: 193270a9-c9cf-404a-8f83-838e71d9ae67
+        type: string
+      mission:
+        description: Current mission
+        example: ARTEMIS
+        type: string
+      reason:
+        description: Reason for explosion (only if exploded)
+        example: ""
+        type: string
+      speed:
+        description: Current speed
+        example: 3500
+        type: integer
+      type:
+        description: Rocket type (e.g. "Falcon-9")
+        example: Falcon-9
+        type: string
+      updatedAt:
+        description: Time of last update
+        example: "2024-03-14T19:45:12.12345+01:00"
+        type: string
+    type: object
+  models.RocketSummary:
+    description: Summary of rocket information for listing
+    properties:
+      exploded:
+        example: false
+        type: boolean
+      id:
+        example: 193270a9-c9cf-404a-8f83-838e71d9ae67
+        type: string
+      mission:
+        example: ARTEMIS
+        type: string
+      speed:
+        example: 3500
+        type: integer
+      type:
+        example: Falcon-9
+        type: string
+      updatedAt:
+        example: "2024-03-14T19:45:12.12345+01:00"
+        type: string
+    type: object
+host: localhost:8088
+info:
+  contact:
+    email: support@lunar-rockets.com
+    name: API Support
+  description: API for tracking lunar rocket missions and processing real-time rocket
+    messages
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Lunar Rocket Tracking API
+  version: "1.0"
+paths:
+  /debug/rockets:
+    get:
+      description: Retrieves debugging information about message processing for all
+        rockets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Debug information for all rockets
+          schema:
+            items:
+              $ref: '#/definitions/api.DebugInfo'
+            type: array
+      summary: Get debug info for all rockets
+      tags:
+      - Debug
+  /messages:
+    post:
+      consumes:
+      - application/json
+      description: Processes an incoming rocket message and updates rocket state
+      parameters:
+      - description: Rocket message to process
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/models.RocketMessage'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message processed successfully
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Invalid request format or validation error
+          schema:
+            $ref: '#/definitions/errors.BadRequestError'
+        "422":
+          description: Message processing failed
+          schema:
+            $ref: '#/definitions/errors.MessageProcessingError'
+      summary: Process rocket message
+      tags:
+      - Messages
+  /rockets:
+    get:
+      description: Retrieves a list of all rockets with their current state, with
+        optional sorting
+      parameters:
+      - default: id
+        description: Sort field (id, type, speed, mission, exploded, updatedAt)
+        in: query
+        name: sortBy
+        type: string
+      - default: asc
+        description: Sort order (asc, desc)
+        in: query
+        name: sortOrder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of rockets
+          schema:
+            items:
+              $ref: '#/definitions/models.RocketSummary'
+            type: array
+        "400":
+          description: Invalid sorting parameters
+          schema:
+            $ref: '#/definitions/errors.BadRequestError'
+      summary: List all rockets
+      tags:
+      - Rockets
+  /rockets/{id}:
+    get:
+      description: Retrieves debugging information about message processing for a
+        specific rocket
+      parameters:
+      - description: Rocket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rocket details
+          schema:
+            $ref: '#/definitions/models.RocketState'
+        "400":
+          description: Invalid rocket ID format
+          schema:
+            $ref: '#/definitions/errors.BadRequestError'
+        "404":
+          description: Rocket not found
+          schema:
+            $ref: '#/definitions/errors.NotFoundError'
+      summary: Get debug info for specific rocket
+      tags:
+      - Debug
+schemes:
+- http
+swagger: "2.0"

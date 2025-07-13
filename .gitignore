@@ -1,0 +1,13 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+darwin_amd64/
+darwin_arm64/
+linux_amd64/
+linux_arm64/
+windows_386/
+windows_amd64/
