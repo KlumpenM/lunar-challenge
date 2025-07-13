@@ -11,3 +11,4 @@ linux_amd64/
 linux_arm64/
 windows_386/
 windows_amd64/
+.cursor/
